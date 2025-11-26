@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LocalTrainer ? Private Offline AI Assistant</title>
+  <meta name="description" content="LocalTrainer is a private, offline, trainable AI assistant. Chat, fine-tune with LoRA/QLoRA, and manage datasets ? all locally." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256'%3E%3Crect width='256' height='256' rx='48' fill='%23151a22'/%3E%3Cpath d='M64 96h128v64H64z' fill='%2300ff9c' opacity='.15'/%3E%3Cpath d='M88 64h80a24 24 0 0124 24v80a24 24 0 01-24 24H88a24 24 0 01-24-24V88a24 24 0 0124-24zm0 0' fill='none' stroke='%2300ff9c' stroke-width='10' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='104' cy='128' r='8' fill='%2300d0ff'/%3E%3Ccircle cx='152' cy='128' r='8' fill='%23a78bfa'/%3E%3Cpath d='M112 160h32' stroke='%23ff3d9a' stroke-width='10' stroke-linecap='round'/%3E%3C/svg%3E" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            base: {
+              900: '#0b0f17',
+              800: '#101623',
+              700: '#151a22',
+              600: '#1d2330',
+            },
+            neon: {
+              green: '#00ff9c',
+              blue: '#00d0ff',
+              purple: '#a78bfa',
+              pink: '#ff3d9a',
+            },
+          },
+          boxShadow: {
+            neon: '0 0 12px rgba(0,255,156,0.45), 0 0 24px rgba(0,255,156,0.25)',
+            glow: '0 0 24px rgba(167,139,250,0.25)',
+          },
+          dropShadow: {
+            neon: '0 0 8px #00ff9c',
+          },
+          backgroundImage: {
+            grid: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.06) 1px, transparent 0)',
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    .backdrop-grid {
+      background-size: 24px 24px;
+      mask-image: radial-gradient(ellipse at 50% -20%, rgba(0,0,0,.5), transparent 65%);
+    }
+    .neon-border { box-shadow: inset 0 0 0 1px rgba(0,255,156,0.25); }
+    .neon-ring { box-shadow: 0 0 0 2px rgba(0,255,156,0.25); }
+    .glass { backdrop-filter: blur(10px); background: rgba(21,26,34,0.6); }
+    ::selection { background: #00ff9c33; color: #e5e7eb; }
+  </style>
+</head>
+<body class="bg-base-900 text-slate-200 min-h-screen selection:bg-neon-green/20">
+  <!-- Background decorations -->
+  <div class="fixed inset-0 -z-10">
+    <div class="absolute inset-0 bg-gradient-to-b from-base-800/60 via-base-900 to-base-900"></div>
+    <div class="absolute inset-0 backdrop-grid opacity-40"></div>
+    <div class="absolute -top-24 -left-24 h-80 w-80 rounded-full bg-neon-green/10 blur-3xl"></div>
+    <div class="absolute -bottom-24 -right-24 h-96 w-96 rounded-full bg-neon-purple/10 blur-3xl"></div>
+  </div>
+
+  <!-- Header -->
+  <header class="sticky top-0 z-20 border-b border-slate-800/60 bg-base-900/70 backdrop-blur supports-[backdrop-filter]:bg-base-900/50">
+    <div class="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between">
+      <a href="#" class="group flex items-center gap-3">
+        <span class="inline-flex h-9 w-9 items-center justify-center rounded-md bg-base-700 neon-border shadow-neon">
+          <svg viewBox="0 0 256 256" class="h-5 w-5 text-neon-green">
+            <rect x="48" y="48" width="160" height="160" rx="16" fill="none" stroke="currentColor" stroke-width="12" />
+            <circle cx="104" cy="128" r="10" fill="currentColor" class="text-neon-blue"></circle>
+            <circle cx="152" cy="128" r="10" fill="currentColor" class="text-neon-purple"></circle>
+            <path d="M112 160h32" stroke="currentColor" stroke-width="12" class="text-neon-pink" />
+          </svg>
+        </span>
+        <span class="font-semibold tracking-tight text-slate-100">LocalTrainer</span>
+      </a>
+      <nav class="hidden md:flex items-center gap-6 text-sm text-slate-300">
+        <a href="#overview" class="hover:text-neon-green transition">Overview</a>
+        <a href="#chat" class="hover:text-neon-green transition">Chat</a>
+        <a href="#training" class="hover:text-neon-green transition">Training</a>
+        <a href="#privacy" class="hover:text-neon-green transition">Privacy</a>
+        <a href="#developer" class="hover:text-neon-green transition">Developer Mode</a>
+      </nav>
+      <a href="#chat" class="rounded-md border border-neon-green/30 bg-base-800 px-3 py-1.5 text-sm text-neon-green shadow-neon hover:bg-base-700 transition">Open Chat</a>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section id="overview" class="relative">
+    <div class="mx-auto max-w-7xl px-4 py-20 md:py-28">
+      <div class="grid gap-12 md:grid-cols-2 md:items-center">
+        <div>
+          <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight">
+            Private, offline, trainable <span class="text-neon-green drop-shadow-neon">AI assistant</span>.
+          </h1>
+          <p class="mt-5 text-slate-300 max-w-xl">
+            Meet LocalTrainer ? your on-device AI copilot. No cloud. No tracking.
+            Fine-tune with LoRA/QLoRA, curate datasets, and chat ? all locally.
+          </p>
+          <div class="mt-8 flex flex-wrap gap-3">
+            <a href="#chat" class="rounded-md bg-neon-green/20 text-neon-green border border-neon-green/40 px-4 py-2 shadow-neon hover:bg-neon-green/30 transition">Start chatting</a>
+            <a href="#training" class="rounded-md bg-base-800 text-slate-200 border border-slate-700 px-4 py-2 hover:bg-base-700 transition">How training works</a>
+          </div>
+          <div class="mt-8 grid grid-cols-3 gap-4 text-center text-xs text-slate-400">
+            <div class="rounded-lg border border-slate-800 bg-base-800/60 p-3">
+              <div class="text-slate-200 font-semibold">100% offline</div>
+              <div>Local inference & training</div>
+            </div>
+            <div class="rounded-lg border border-slate-800 bg-base-800/60 p-3">
+              <div class="text-slate-200 font-semibold">Trainable</div>
+              <div>LoRA / QLoRA adapters</div>
+            </div>
+            <div class="rounded-lg border border-slate-800 bg-base-800/60 p-3">
+              <div class="text-slate-200 font-semibold">Private</div>
+              <div>No cloud calls ever</div>
+            </div>
+          </div>
+        </div>
+        <div class="relative">
+          <div class="absolute -inset-1 rounded-xl bg-gradient-to-r from-neon-green/20 via-neon-purple/10 to-neon-blue/20 blur-xl"></div>
+          <div class="relative rounded-xl border border-slate-800 bg-base-800/70 p-5 shadow-glow">
+            <div class="text-xs text-slate-400">Quick demo</div>
+            <div class="mt-3 rounded-lg border border-slate-700 bg-base-900 p-4 text-sm">
+              <div class="text-slate-300">You</div>
+              <div class="mt-1 text-slate-400">Can you really run offline?</div>
+              <div class="mt-4 text-neon-green">LocalTrainer</div>
+              <div class="mt-1 text-slate-300">Yes. All model weights, adapters, and datasets live on your device. No requests are sent to external services.</div>
+            </div>
+            <div class="mt-4 flex items-center gap-2 text-xs text-slate-400">
+              <span class="inline-block h-2 w-2 rounded-full bg-neon-green shadow-neon"></span>
+              <span>Local runtime active</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Chat -->
+  <section id="chat" class="relative border-t border-slate-800/60">
+    <div class="mx-auto max-w-7xl px-4 py-16">
+      <div class="mb-6 flex items-center justify-between">
+        <h2 class="text-2xl md:text-3xl font-bold tracking-tight">Chat with LocalTrainer</h2>
+        <div class="flex items-center gap-2 text-xs">
+          <button id="resetChat" class="rounded-md border border-slate-700 px-3 py-1.5 hover:bg-base-800 transition">Reset</button>
+          <label class="inline-flex items-center gap-2 rounded-md border border-slate-700 px-3 py-1.5">
+            <input id="devSwitch" type="checkbox" class="accent-neon-green" />
+            <span>Developer mode</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="grid gap-6 md:grid-cols-3 md:items-start">
+        <div class="md:col-span-2">
+          <div id="chatWindow" class="h-[420px] w-full overflow-y-auto rounded-xl border border-slate-800 bg-base-800/60 p-4 shadow-inner">
+            <!-- messages rendered here -->
+          </div>
+          <form id="chatForm" class="mt-4 flex gap-2">
+            <input id="chatInput" type="text" autocomplete="off" placeholder="Type a message (TRAIN:ADD, TRAIN:EVAL, ? in dev mode)" class="flex-1 rounded-md border border-slate-700 bg-base-800 px-3 py-2 outline-none ring-0 focus:border-neon-green/50" />
+            <button class="rounded-md bg-neon-green/20 text-neon-green border border-neon-green/40 px-4 py-2 shadow-neon hover:bg-neon-green/30 transition" type="submit">Send</button>
+          </form>
+        </div>
+        <aside class="md:col-span-1">
+          <div class="rounded-xl border border-slate-800 bg-base-800/60 p-4">
+            <div class="text-sm font-semibold text-slate-200">Tips</div>
+            <ul class="mt-3 list-disc space-y-2 pl-5 text-sm text-slate-400">
+              <li>Toggle <span class="text-slate-300">Developer mode</span> to try training commands.</li>
+              <li>Examples: <code class="text-neon-green">TRAIN:ADD</code>, <code class="text-neon-green">TRAIN:PREPARE</code>, <code class="text-neon-green">TRAIN:EVAL</code>.</li>
+              <li>History is stored locally in your browser.</li>
+            </ul>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- Training -->
+  <section id="training" class="relative border-t border-slate-800/60">
+    <div class="mx-auto max-w-7xl px-4 py-16">
+      <h2 class="text-2xl md:text-3xl font-bold tracking-tight">Fine-tuning & datasets</h2>
+      <p class="mt-3 text-slate-300 max-w-3xl">LocalTrainer supports adapter-based fine-tuning with LoRA and QLoRA. Curate datasets, stage samples, and produce domain-adapted adapters ? all on your machine.</p>
+
+      <div class="mt-8 grid gap-6 md:grid-cols-3">
+        <div class="rounded-xl border border-slate-800 bg-base-800/60 p-4">
+          <div class="text-slate-200 font-semibold">1) Add training data</div>
+          <p class="mt-2 text-sm text-slate-400">Stream or import JSONL, CSV, or text. Tag samples, redact PII, and stage them into a buffer.</p>
+          <pre class="mt-3 rounded-md border border-slate-800 bg-base-900 p-3 text-xs text-slate-300"><code>TRAIN:ADD source=./data/*.jsonl tags=domain:docs redact=on</code></pre>
+        </div>
+        <div class="rounded-xl border border-slate-800 bg-base-800/60 p-4">
+          <div class="text-slate-200 font-semibold">2) Prepare & fine-tune</div>
+          <p class="mt-2 text-sm text-slate-400">Tokenize, split, and balance classes. Run LoRA/QLoRA with automatic mixed precision and gradient checkpointing.</p>
+          <pre class="mt-3 rounded-md border border-slate-800 bg-base-900 p-3 text-xs text-slate-300"><code>TRAIN:PREPARE model=Q4_K_M lora=r=16 alpha=32 target=attn,mlp</code></pre>
+        </div>
+        <div class="rounded-xl border border-slate-800 bg-base-800/60 p-4">
+          <div class="text-slate-200 font-semibold">3) Evaluate & export</div>
+          <p class="mt-2 text-sm text-slate-400">Run held-out evaluation, compare baselines, and export adapters for quick swapping.</p>
+          <pre class="mt-3 rounded-md border border-slate-800 bg-base-900 p-3 text-xs text-slate-300"><code>TRAIN:EVAL metrics=perplexity,exact_match
+TRAIN:EXPORT_ADAPTER name=domain-adapter-v1</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Privacy -->
+  <section id="privacy" class="relative border-t border-slate-800/60">
+    <div class="mx-auto max-w-7xl px-4 py-16">
+      <h2 class="text-2xl md:text-3xl font-bold tracking-tight">Local privacy guarantees</h2>
+      <div class="mt-6 grid gap-6 md:grid-cols-3">
+        <div class="rounded-xl border border-slate-800 bg-base-800/60 p-5">
+          <div class="text-slate-200 font-semibold">No network egress</div>
+          <p class="mt-2 text-sm text-slate-400">Models, adapters, prompts, and datasets never leave your device. Air?gapped safe.</p>
+        </div>
+        <div class="rounded-xl border border-slate-800 bg-base-800/60 p-5">
+          <div class="text-slate-200 font-semibold">Transparent storage</div>
+          <p class="mt-2 text-sm text-slate-400">Simple, inspectable local folders for checkpoints, adapters, and datasets.</p>
+        </div>
+        <div class="rounded-xl border border-slate-800 bg-base-800/60 p-5">
+          <div class="text-slate-200 font-semibold">PII controls</div>
+          <p class="mt-2 text-sm text-slate-400">Redaction, review, and explicit <code class="text-neon-green">TRAIN:CONFIRM_PII</code> before sensitive samples are used.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Developer Mode -->
+  <section id="developer" class="relative border-t border-slate-800/60">
+    <div class="mx-auto max-w-7xl px-4 py-16">
+      <div class="mb-6 flex items-center justify-between">
+        <h2 class="text-2xl md:text-3xl font-bold tracking-tight">Developer Mode commands</h2>
+        <span class="text-xs text-slate-400">Toggle in chat to try them</span>
+      </div>
+      <div class="grid gap-4 md:grid-cols-2">
+        <div class="rounded-xl border border-slate-800 bg-base-800/60 p-4">
+          <div class="font-mono text-neon-green">TRAIN:ADD</div>
+          <p class="mt-1 text-sm text-slate-400">Ingest samples (JSONL/CSV/TXT). Supports tags, PII redaction, and dedupe.</p>
+        </div>
+        <div class="rounded-xl border border-slate-800 bg-base-800/60 p-4">
+          <div class="font-mono text-neon-green">TRAIN:PREPARE</div>
+          <p class="mt-1 text-sm text-slate-400">Tokenize, split, and configure LoRA/QLoRA hyperparameters and target modules.</p>
+        </div>
+        <div class="rounded-xl border border-slate-800 bg-base-800/60 p-4">
+          <div class="font-mono text-neon-green">TRAIN:EVAL</div>
+          <p class="mt-1 text-sm text-slate-400">Run eval on held?out data; track perplexity, EM/F1, and regression metrics.</p>
+        </div>
+        <div class="rounded-xl border border-slate-800 bg-base-800/60 p-4">
+          <div class="font-mono text-neon-green">TRAIN:EXPORT_ADAPTER</div>
+          <p class="mt-1 text-sm text-slate-400">Export LoRA/QLoRA adapters for fast swapping and sharing locally.</p>
+        </div>
+        <div class="rounded-xl border border-slate-800 bg-base-800/60 p-4">
+          <div class="font-mono text-neon-green">TRAIN:LOAD_ADAPTER</div>
+          <p class="mt-1 text-sm text-slate-400">Load a previously exported adapter into the active model.</p>
+        </div>
+        <div class="rounded-xl border border-slate-800 bg-base-800/60 p-4">
+          <div class="font-mono text-neon-green">TRAIN:RESET_BUFFER</div>
+          <p class="mt-1 text-sm text-slate-400">Clear the staged sample buffer; does not remove datasets on disk.</p>
+        </div>
+        <div class="rounded-xl border border-slate-800 bg-base-800/60 p-4">
+          <div class="font-mono text-neon-green">TRAIN:CONFIRM_PII</div>
+          <p class="mt-1 text-sm text-slate-400">Explicitly approve redacted PII samples for training use.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800/60">
+    <div class="mx-auto max-w-7xl px-4 py-8 text-xs text-slate-500 flex items-center justify-between">
+      <span>? <span id="year"></span> LocalTrainer. All processing stays on-device.</span>
+      <a href="#overview" class="hover:text-slate-300 transition">Back to top</a>
+    </div>
+  </footer>
+
+  <script src="./script.js"></script>
+</body>
+</html>
